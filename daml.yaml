@@ -1,0 +1,16 @@
+sdk-version: 2.10.4
+name: canton402
+version: 0.1.0
+source: daml
+parties:
+  - SettlementBank
+  - Acme
+  - Agent
+  - DataVendor
+  - ComputeVendor
+  - Auditor
+  - Rival
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script

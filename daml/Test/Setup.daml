@@ -1,0 +1,64 @@
+module Test.Setup where
+
+import Daml.Script
+import Canton402.Asset
+import Canton402.Mandate
+import Canton402.Commerce
+
+-- | Allocated parties, returned so the gateway can learn their real ledger ids.
+-- Run with `daml script ... --output-file gateway/parties.json` to capture them.
+data Parties = Parties
+  with
+    bank : Party
+    acme : Party
+    agent : Party
+    dataV : Party
+    computeV : Party
+    auditor : Party
+    rival : Party
+  deriving (Eq, Show)
+
+-- | Seed a live ledger (used by the gateway demo): allocate parties, fund the
+-- agent, issue its mandate, and publish two offers. Returns the party ids.
+setup : Script Parties
+setup = do
+  bank     <- allocateParty "SettlementBank"
+  acme     <- allocateParty "Acme"
+  agent    <- allocateParty "Agent"
+  dataV    <- allocateParty "DataVendor"
+  computeV <- allocateParty "ComputeVendor"
+  auditor  <- allocateParty "Auditor"
+  rival    <- allocateParty "Rival"
+
+  _ <- submit bank do
+    createCmd Asset with issuer = bank, owner = agent, amount = 1000.0
+
+  _ <- submit acme do
+    createCmd Mandate with
+      principal = acme
+      agent = agent
+      auditor = auditor
+      perTxCap = 100.0
+      dailyCap = 250.0
+      spentToday = 0.0
+      allowedProviders = [dataV, computeV]
+
+  _ <- submit dataV do
+    createCmd ServiceOffer with
+      provider = dataV
+      issuer = bank
+      name = "market-data-feed"
+      description = "Real-time institutional price feed"
+      price = 60.0
+      discoverableBy = [agent]
+
+  _ <- submit computeV do
+    createCmd ServiceOffer with
+      provider = computeV
+      issuer = bank
+      name = "inference-run"
+      description = "One model inference run"
+      price = 40.0
+      discoverableBy = [agent]
+
+  pure Parties with bank, acme, agent, dataV, computeV, auditor, rival

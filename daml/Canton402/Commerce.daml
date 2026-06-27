@@ -1,0 +1,121 @@
+module Canton402.Commerce where
+
+import DA.Text (sha256)
+import Canton402.Asset
+import Canton402.Mandate
+
+-- | A hash-chained receipt for a settled pay-and-call.
+--
+-- Each receipt embeds the hash of the previous one, so the full sequence is
+-- tamper-evident: change any past receipt and every later hash stops matching.
+-- This is the same verifiable-audit pattern Sumplus runs for its EVM trading
+-- agent (commit-reveal + hash-chained decision receipts), here native to Daml.
+--
+-- Privacy: visible only to the two counterparties and the mandate's auditor.
+-- A regulator can be added as an observer for need-to-know disclosure without
+-- making the payment public to the whole network.
+template PaymentReceipt
+  with
+    provider : Party
+    agent : Party
+    auditor : Party
+    service : Text
+    amount : Decimal
+    seq : Int
+    prevHash : Text
+    thisHash : Text
+  where
+    signatory provider, agent
+    observer auditor
+
+-- | The entitlement delivered to the agent on payment: proof it may now consume
+-- the service it paid for. Private to the provider and the agent.
+template ServiceEntitlement
+  with
+    provider : Party
+    agent : Party
+    service : Text
+    paidAmount : Decimal
+  where
+    signatory provider, agent
+
+-- | The result of a successful pay-and-call.
+data PayResult = PayResult
+  with
+    entitlement : ContractId ServiceEntitlement
+    receipt : ContractId PaymentReceipt
+    change : Optional (ContractId Asset)
+    mandate : ContractId Mandate
+    receiptHash : Text
+
+-- | A service a provider offers for a fixed price, settled in `issuer`'s asset.
+--
+-- The single `PayAndCall` choice is the Canton 402 primitive: in one atomic
+-- ledger transaction it (1) checks the agent's Maria mandate, (2) settles
+-- payment to the provider with change back to the agent, (3) delivers the
+-- service entitlement, and (4) writes a hash-chained receipt. All four commit
+-- together or none do -- no partial fills, no pay-without-delivery.
+template ServiceOffer
+  with
+    provider : Party
+    issuer : Party
+    name : Text
+    description : Text
+    price : Decimal
+    discoverableBy : [Party]
+  where
+    signatory provider
+    observer discoverableBy
+    ensure price > 0.0
+
+    nonconsuming choice PayAndCall : PayResult
+      with
+        agent : Party
+        mandateCid : ContractId Mandate
+        assetCid : ContractId Asset
+        seq : Int
+        prevHash : Text
+      controller agent
+      do
+        -- Read the mandate up front to learn the auditor, and to bind it to
+        -- this agent. The Authorize exercise below enforces the policy.
+        m <- fetch mandateCid
+        assertMsg "mandate does not belong to this agent" (m.agent == agent)
+
+        -- (1) Policy gate -- Maria mandate. Aborts the whole tx on any breach.
+        newMandate <- exercise mandateCid Authorize with
+               provider, amount = price, service = name
+
+        -- (2) Settlement -- split the agent's holding, pay the provider,
+        -- return change. The Split is controlled by the holding's owner, so
+        -- this only succeeds when the agent actually owns the asset.
+        splitRes <- exercise assetCid Split with payAmount = price, recipient = provider
+        paid <- fetch splitRes.paid
+        assertMsg "settlement asset issuer does not match the offer" (paid.issuer == issuer)
+
+        -- (3) Delivery -- the service entitlement the agent paid for.
+        entCid <- create ServiceEntitlement with
+                    provider = provider
+                    agent = agent
+                    service = name
+                    paidAmount = price
+
+        -- (4) Receipt -- hash-chained to the previous one.
+        let payload = show seq <> "|" <> name <> "|" <> show price <> "|" <> prevHash
+            h = sha256 payload
+        rcptCid <- create PaymentReceipt with
+                     provider = provider
+                     agent = agent
+                     auditor = m.auditor
+                     service = name
+                     amount = price
+                     seq = seq
+                     prevHash = prevHash
+                     thisHash = h
+
+        pure PayResult with
+          entitlement = entCid
+          receipt = rcptCid
+          change = splitRes.change
+          mandate = newMandate
+          receiptHash = h

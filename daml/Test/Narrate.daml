@@ -1,0 +1,114 @@
+module Test.Narrate where
+
+import Daml.Script
+import DA.Foldable (forA_)
+import DA.Optional (fromSome)
+import Canton402.Asset
+import Canton402.Mandate
+import Canton402.Commerce
+
+-- | A narrated run of the Canton 402 agent, for the demo video.
+--
+-- Same flow as `Test.Demo` but with `debug` output so each step is readable on
+-- screen. Run against a live ledger:
+--
+--   daml start                       # in one terminal (sandbox + navigator)
+--   daml script --dar .daml/dist/canton402-0.1.0.dar \
+--     --script-name Test.Narrate:narrate \
+--     --ledger-host localhost --ledger-port 6865
+narrate : Script ()
+narrate = do
+  debug "=== Canton 402: an AI agent buys services on its own, privately ==="
+
+  bank     <- allocateParty "SettlementBank"
+  acme     <- allocateParty "Acme"
+  agent    <- allocateParty "Agent"
+  dataV    <- allocateParty "DataVendor"
+  computeV <- allocateParty "ComputeVendor"
+  auditor  <- allocateParty "Auditor"
+  rival    <- allocateParty "Rival"
+
+  debug "Acme funds its agent with 1000 settlement units and issues a mandate:"
+  debug "  per-tx cap 100, daily cap 250, vendors [DataVendor, ComputeVendor]."
+  wallet0 <- submit bank do
+    createCmd Asset with issuer = bank, owner = agent, amount = 1000.0
+  mandate0 <- submit acme do
+    createCmd Mandate with
+      principal = acme
+      agent = agent
+      auditor = auditor
+      perTxCap = 100.0
+      dailyCap = 250.0
+      spentToday = 0.0
+      allowedProviders = [dataV, computeV]
+
+  dataOffer <- submit dataV do
+    createCmd ServiceOffer with
+      provider = dataV
+      issuer = bank
+      name = "market-data-feed"
+      description = "Real-time institutional price feed"
+      price = 60.0
+      discoverableBy = [agent]
+  computeOffer <- submit computeV do
+    createCmd ServiceOffer with
+      provider = computeV
+      issuer = bank
+      name = "inference-run"
+      description = "One model inference run"
+      price = 40.0
+      discoverableBy = [agent]
+
+  debug "Agent discovers the offers it is allowed to see:"
+  offers <- query @ServiceOffer agent
+  forA_ offers \(_, o) -> debug ("  - " <> o.name <> " @ " <> show o.price)
+
+  debug "Agent pays for market-data-feed (60). One atomic tx: policy -> pay -> deliver -> receipt."
+  r1 <- submit agent do
+    exerciseCmd dataOffer PayAndCall with
+      agent = agent
+      mandateCid = mandate0
+      assetCid = wallet0
+      seq = 1
+      prevHash = ""
+  debug ("  receipt #1 hash: " <> r1.receiptHash)
+  let wallet1 = fromSome r1.change
+
+  debug "Agent pays for inference-run (40). Receipt #2 is hash-chained to #1."
+  r2 <- submit agent do
+    exerciseCmd computeOffer PayAndCall with
+      agent = agent
+      mandateCid = r1.mandate
+      assetCid = wallet1
+      seq = 2
+      prevHash = r1.receiptHash
+  debug ("  receipt #2 hash: " <> r2.receiptHash <> "  (prev = " <> r1.receiptHash <> ")")
+
+  debug "Now the agent tries to overspend: a 150 service, above its 100 per-tx cap."
+  bigOffer <- submit dataV do
+    createCmd ServiceOffer with
+      provider = dataV
+      issuer = bank
+      name = "premium-feed"
+      description = "Above the agent's per-tx cap"
+      price = 150.0
+      discoverableBy = [agent]
+  blocked <- submitMustFail agent do
+    exerciseCmd bigOffer PayAndCall with
+      agent = agent
+      mandateCid = r2.mandate
+      assetCid = wallet1
+      seq = 3
+      prevHash = r2.receiptHash
+  debug "  BLOCKED on-ledger by the mandate. The agent's code never had a chance to overspend."
+
+  debug "Privacy check: who can see Acme's two receipts?"
+  rivalR   <- query @PaymentReceipt rival
+  auditorR <- query @PaymentReceipt auditor
+  dataR    <- query @PaymentReceipt dataV
+  debug ("  Rival sees   : " <> show (length rivalR) <> " receipts")
+  debug ("  Auditor sees : " <> show (length auditorR) <> " receipts (need-to-know)")
+  debug ("  DataVendor sees: " <> show (length dataR) <> " (only its own)")
+
+  debug "=== Done. Real Daml, real policy, real privacy. ==="
+  pure ()

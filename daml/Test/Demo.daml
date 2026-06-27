@@ -1,0 +1,184 @@
+module Test.Demo where
+
+import Daml.Script
+import DA.Assert ((===))
+import DA.Optional (fromSome)
+import DA.Text (sha256)
+import Canton402.Asset
+import Canton402.Mandate
+import Canton402.Commerce
+
+-- | End-to-end demonstration of Canton 402 agent commerce.
+--
+-- The story: Acme gives its AI treasury agent a Daml mandate (spend <= 100 per
+-- call, <= 250 per day, only approved vendors). The agent then autonomously
+-- discovers and pays for services in single atomic transactions, each one
+-- private to the two counterparties and an auditor, and each one recorded in a
+-- tamper-evident receipt chain. The mandate stops every out-of-policy attempt.
+--
+-- Run with:  daml test --all     (CI / acceptance)
+--        or:  daml start          then pick `demo` in Daml Studio / Navigator
+demo : Script ()
+demo = do
+  -- Parties --------------------------------------------------------------
+  bank     <- allocateParty "SettlementBank"  -- issues the settlement asset
+  acme     <- allocateParty "Acme"            -- the company (principal)
+  agent    <- allocateParty "Agent"           -- Acme's AI treasury agent
+  dataV    <- allocateParty "DataVendor"
+  computeV <- allocateParty "ComputeVendor"
+  evilV    <- allocateParty "UnlistedVendor"  -- not on Acme's allow-list
+  auditor  <- allocateParty "Auditor"         -- need-to-know visibility
+  rival    <- allocateParty "Rival"           -- must never see Acme's commerce
+
+  -- Setup ----------------------------------------------------------------
+  -- Bank issues the agent 1000 units of the settlement asset.
+  wallet0 <- submit bank do
+    createCmd Asset with
+      issuer = bank
+      owner = agent
+      amount = 1000.0
+
+  -- Acme issues the spending mandate (the Maria policy, on-ledger).
+  mandate0 <- submit acme do
+    createCmd Mandate with
+      principal = acme
+      agent = agent
+      auditor = auditor
+      perTxCap = 100.0
+      dailyCap = 250.0
+      spentToday = 0.0
+      allowedProviders = [dataV, computeV]
+
+  -- Vendors publish offers, discoverable by the agent.
+  dataOffer <- submit dataV do
+    createCmd ServiceOffer with
+      provider = dataV
+      issuer = bank
+      name = "market-data-feed"
+      description = "Real-time institutional price feed"
+      price = 60.0
+      discoverableBy = [agent]
+  computeOffer <- submit computeV do
+    createCmd ServiceOffer with
+      provider = computeV
+      issuer = bank
+      name = "inference-run"
+      description = "One model inference run"
+      price = 40.0
+      discoverableBy = [agent]
+  -- An unlisted vendor also publishes an offer the agent can see but not buy.
+  evilOffer <- submit evilV do
+    createCmd ServiceOffer with
+      provider = evilV
+      issuer = bank
+      name = "off-policy-service"
+      description = "Vendor not on Acme's allow-list"
+      price = 10.0
+      discoverableBy = [agent]
+
+  -- Happy path: atomic pay-and-calls with a chained receipt trail ---------
+  -- Spend #1: market data, 60. Genesis receipt (prevHash = "").
+  r1 <- submit agent do
+    exerciseCmd dataOffer PayAndCall with
+      agent = agent
+      mandateCid = mandate0
+      assetCid = wallet0
+      seq = 1
+      prevHash = ""
+  let w1 = fromSome r1.change  -- 940 change back to the agent
+
+  -- Spend #2: inference, 40. Chained to receipt #1's hash.
+  r2 <- submit agent do
+    exerciseCmd computeOffer PayAndCall with
+      agent = agent
+      mandateCid = r1.mandate
+      assetCid = w1
+      seq = 2
+      prevHash = r1.receiptHash
+  let w2 = fromSome r2.change  -- 900
+
+  -- Receipt chain is well-formed: #2 embeds #1's hash, and each hash is the
+  -- sha256 of its declared payload (anyone with the receipts can re-verify).
+  Some rc1 <- queryContractId auditor r1.receipt
+  Some rc2 <- queryContractId auditor r2.receipt
+  rc1.prevHash === ""
+  rc2.prevHash === rc1.thisHash
+  rc1.thisHash === sha256 ("1|market-data-feed|" <> show (60.0 : Decimal) <> "|")
+  rc2.thisHash === sha256 ("2|inference-run|" <> show (40.0 : Decimal) <> "|" <> rc1.thisHash)
+
+  -- Policy guardrails: each of these must be rejected on-ledger -----------
+  -- They fail at the mandate check, before any settlement, so w2 and the
+  -- mandate are untouched and the run continues.
+  -- (a) Over the per-transaction cap (a 150 offer; cap is 100).
+  bigOffer <- submit dataV do
+    createCmd ServiceOffer with
+      provider = dataV
+      issuer = bank
+      name = "premium-feed"
+      description = "Above the agent's per-tx cap"
+      price = 150.0
+      discoverableBy = [agent]
+  submitMustFail agent do
+    exerciseCmd bigOffer PayAndCall with
+      agent = agent
+      mandateCid = r2.mandate
+      assetCid = w2
+      seq = 3
+      prevHash = r2.receiptHash
+
+  -- (b) Vendor not on the allow-list.
+  submitMustFail agent do
+    exerciseCmd evilOffer PayAndCall with
+      agent = agent
+      mandateCid = r2.mandate
+      assetCid = w2
+      seq = 3
+      prevHash = r2.receiptHash
+
+  -- Spend #3 and #4 bring the daily total to 200 (still <= 250).
+  r3 <- submit agent do
+    exerciseCmd dataOffer PayAndCall with
+      agent = agent
+      mandateCid = r2.mandate
+      assetCid = w2
+      seq = 3
+      prevHash = r2.receiptHash
+  let w3 = fromSome r3.change
+  r4 <- submit agent do
+    exerciseCmd computeOffer PayAndCall with
+      agent = agent
+      mandateCid = r3.mandate
+      assetCid = w3
+      seq = 4
+      prevHash = r3.receiptHash
+  let w4 = fromSome r4.change
+
+  -- (c) Daily cap. spentToday is 200; one more 60 would reach 260 > 250.
+  submitMustFail agent do
+    exerciseCmd dataOffer PayAndCall with
+      agent = agent
+      mandateCid = r4.mandate
+      assetCid = w4
+      seq = 5
+      prevHash = r4.receiptHash
+
+  -- Privacy: who can see what -------------------------------------------
+  -- The rival sees none of Acme's receipts, entitlements, or holdings.
+  rivalReceipts <- query @PaymentReceipt rival
+  rivalEnts     <- query @ServiceEntitlement rival
+  rivalAssets   <- query @Asset rival
+  length rivalReceipts === 0
+  length rivalEnts === 0
+  length rivalAssets === 0
+
+  -- The auditor sees exactly the four settled receipts (need-to-know).
+  auditorReceipts <- query @PaymentReceipt auditor
+  length auditorReceipts === 4
+
+  -- Each provider sees only its own receipts, never the other vendor's.
+  dataReceipts    <- query @PaymentReceipt dataV
+  computeReceipts <- query @PaymentReceipt computeV
+  length dataReceipts === 2     -- two market-data buys (#1, #3)
+  length computeReceipts === 2  -- two inference buys (#2, #4)
+
+  pure ()

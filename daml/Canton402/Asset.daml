@@ -1,0 +1,53 @@
+module Canton402.Asset where
+
+-- | A minimal issuer-signed fungible holding used as the settlement asset.
+--
+-- It stands in for Canton Coin (CC) or a tokenized deposit. The contract is
+-- issuer-signed with the owner as an observer (the canonical Daml `Iou`
+-- pattern): the owner can transfer or split it freely, while the issuer's
+-- authority rides on the contract so newly created holdings remain valid.
+--
+-- Privacy: each holding is visible only to its issuer and its current owner.
+-- When the agent pays a provider, the provider's new holding is visible to the
+-- provider and the issuer only -- never to other agents or other providers.
+-- This is Canton's sub-transaction privacy, expressed with stakeholders.
+template Asset
+  with
+    issuer : Party
+    owner : Party
+    amount : Decimal
+  where
+    signatory issuer
+    observer owner
+    ensure amount > 0.0
+
+    -- | Split `payAmount` off to `recipient`, returning any change to the
+    -- current owner. Used inside the atomic pay-and-call so settlement and
+    -- service delivery commit together or not at all.
+    choice Split : SplitResult
+      with
+        payAmount : Decimal
+        recipient : Party
+      controller owner
+      do
+        assertMsg "split amount must be positive" (payAmount > 0.0)
+        assertMsg "insufficient balance" (amount >= payAmount)
+        paid <- create this with owner = recipient, amount = payAmount
+        change <-
+          if amount > payAmount
+            then do
+              c <- create this with amount = amount - payAmount
+              pure (Some c)
+            else pure None
+        pure SplitResult with paid, change
+
+    -- | Transfer the whole holding to a new owner.
+    choice Transfer : ContractId Asset
+      with newOwner : Party
+      controller owner
+      do create this with owner = newOwner
+
+data SplitResult = SplitResult
+  with
+    paid : ContractId Asset
+    change : Optional (ContractId Asset)

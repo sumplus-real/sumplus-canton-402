@@ -1,0 +1,18 @@
+# Daml build output
+.daml/
+*.dar
+
+# Canton sandbox / runtime logs
+log/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Generated at runtime (dev party ids, dev JWTs)
+gateway/parties.json
+
+# OS
+.DS_Store

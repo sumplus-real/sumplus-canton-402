@@ -1,0 +1,39 @@
+CANTON 402 — SUBMISSION FIELDS (Build on Canton hackathon)
+Track 3: Payments, Neobanking & Agent Commerce
+
+Paste each field into the submission form. Plain text, no formatting.
+
+
+PROJECT NAME
+Canton 402
+
+ONE-LINER
+An agent-era corporate card on Canton: a business gives its AI agent a spending mandate, and the agent buys services on its own, privately and only within the rules.
+
+WHAT IT DOES
+AI agents are starting to pay for things, such as data feeds, compute, and other agents' services. Two problems show up the moment they do. You cannot trust an agent with an open wallet, and business payments are not meant to be public. Canton 402 solves both. A company issues its agent a mandate as a Daml contract: a per-transaction cap, a daily cap, an allow-list of vendors, and an auditor who can see the receipts. The agent then discovers and buys services by itself. Every purchase settles payment and delivery in one atomic Daml transaction, stays visible only to the two counterparties and the auditor, and leaves a hash-chained receipt that anyone holding it can re-verify.
+
+HOW IT WORKS
+The core is one choice, PayAndCall, on a vendor's ServiceOffer. In a single atomic transaction it (1) checks the agent's mandate, (2) settles payment to the vendor with change back to the agent, (3) delivers the service entitlement, and (4) writes a hash-chained receipt. All four commit together or none do, so there is never payment without delivery or a spend that breaks policy. The mandate is enforced on the ledger, not in the agent's code, so a buggy or prompt-injected agent still cannot overspend or pay a vendor that is not on the list. Privacy comes from Canton's stakeholder model: a rival party sees none of the company's receipts, each vendor sees only its own, and the auditor sees exactly the settled ones.
+
+The four contracts map onto Sumplus's existing products. The Mandate is the Maria policy layer expressed in Daml. The ServiceOffer is the Arsenal paid-skill model. The hash-chained PaymentReceipt is the same verifiable-audit pattern Sumplus already runs on its EVM trading agent, here native to Daml. An x402-compatible HTTP gateway lets any agent, even one with no Canton SDK, discover and pay for services over plain HTTP.
+
+WHAT RUNS TODAY
+Everything in the demo runs on a real Daml ledger.
+- daml test passes the full acceptance suite: two settled purchases with a chained receipt trail, three out-of-policy attempts rejected on-ledger (over per-transaction cap, unlisted vendor, over daily cap), and privacy assertions across five parties.
+- An autonomous agent runs against a live sandbox through the HTTP 402 gateway: it discovers services, gets HTTP 402, pays, and receives the on-ledger receipt. When the daily cap is reached the ledger rejects the spend and the gateway relays the reason.
+
+HOW IT COMPLEMENTS CANTON
+Sumplus has a Canton Foundation Development Fund proposal, CAEL (Canton Agent Execution Layer). The Canton 402 payment protocol and its Daml contract suite are scoped to milestones M2 and M3 of that proposal. This project is a working vertical slice of that layer, built and running now, which shows the proposed contract suite end to end.
+
+TECH
+Daml 2.10, Canton sandbox, Daml Script for the acceptance suite, a Python HTTP 402 gateway over the Daml JSON API. Apache-2.0.
+
+GITHUB
+<add repo URL after push>
+
+DEMO VIDEO
+<add link>
+
+CONTACT
+Jakob, j@sumplus.xyz

@@ -1,0 +1,52 @@
+module Canton402.Mandate where
+
+-- | The Maria policy layer, expressed natively in Daml.
+--
+-- A principal (a company or an individual) issues a spending mandate to its AI
+-- agent. The mandate encodes:
+--
+--   * `perTxCap`        -- the most the agent may spend in a single call
+--   * `dailyCap`        -- the most the agent may spend in total
+--   * `spentToday`      -- running total, incremented on every authorized spend
+--   * `allowedProviders`-- the only counterparties the agent may pay
+--   * `auditor`         -- a party granted need-to-know sight of the receipts
+--
+-- The agent can act only within these bounds. Every spend is checked on-ledger
+-- by the `Authorize` choice, which rolls back the entire atomic pay-and-call if
+-- any rule is broken. This is policy enforcement as a contract, not a promise.
+template Mandate
+  with
+    principal : Party
+    agent : Party
+    auditor : Party
+    perTxCap : Decimal
+    dailyCap : Decimal
+    spentToday : Decimal
+    allowedProviders : [Party]
+  where
+    signatory principal
+    observer agent
+    ensure perTxCap > 0.0 && dailyCap >= perTxCap && spentToday >= 0.0
+
+    -- | Authorize a single spend. Validates the policy and returns an updated
+    -- mandate with the daily total incremented. Exercised by the agent inside
+    -- the pay-and-call; failure aborts the whole transaction.
+    choice Authorize : ContractId Mandate
+      with
+        provider : Party
+        amount : Decimal
+        service : Text
+      controller agent
+      do
+        assertMsg
+          ("provider not in allow-list for service '" <> service <> "'")
+          (provider `elem` allowedProviders)
+        assertMsg
+          ("spend " <> show amount <> " exceeds per-transaction cap " <> show perTxCap)
+          (amount <= perTxCap)
+        let newSpent = spentToday + amount
+        assertMsg
+          ("spend would bring today's total to " <> show newSpent
+             <> ", over the daily cap " <> show dailyCap)
+          (newSpent <= dailyCap)
+        create this with spentToday = newSpent
