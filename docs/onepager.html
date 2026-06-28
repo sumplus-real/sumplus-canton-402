@@ -31,26 +31,14 @@
   ol.steps li{ counter-increment:s; position:relative; padding-left:22px; font-size:11.4px; line-height:1.4; margin-bottom:3px; color:#1c2740; }
   ol.steps li::before{ content:counter(s); position:absolute; left:0; top:0; width:15px; height:15px; border-radius:50%; background:var(--accent); color:#fff; font:700 9px var(--mono); display:flex; align-items:center; justify-content:center; }
 
-  /* mandate: a light, bordered box (no dark fill) */
-  .mandate{ border:1px solid var(--line); border-radius:10px; padding:11px 14px; margin-bottom:6px; }
-  .mandate .name{ font-weight:800; font-size:13px; letter-spacing:.2px; margin-bottom:6px; }
-  .mandate .grid{ display:flex; gap:26px; flex-wrap:wrap; }
-  .mandate .cell .lbl{ font:600 8.5px var(--mono); letter-spacing:.5px; text-transform:uppercase; color:var(--faint); }
-  .mandate .cell .v{ font:600 13px var(--mono); color:var(--accent); margin-top:1px; }
-
   ul.runs{ list-style:none; margin-top:4px; }
-  ul.runs li{ font-size:11.4px; line-height:1.42; padding-left:15px; position:relative; margin-bottom:3px; color:#1c2740; }
-  ul.runs li::before{ content:'▸'; position:absolute; left:0; color:var(--accent); font-size:10px; top:1px; }
+  ul.runs li{ font-size:11.4px; line-height:1.45; padding-left:15px; position:relative; margin-bottom:4px; color:#1c2740; }
+  ul.runs li::before{ content:'•'; position:absolute; left:1px; color:var(--accent); font-size:12px; top:0; }
+  ul.runs .lbl{ display:inline-block; min-width:138px; color:var(--dim); }
+  ul.runs .v{ font-family:var(--mono); color:var(--accent); font-weight:600; }
 
   .maps{ font-size:11.3px; line-height:1.5; }
   .maps .k{ font:600 11px var(--mono); color:var(--violet); }
-
-  .privacy{ display:flex; gap:8px; margin-top:7px; }
-  .ptile{ flex:1; text-align:center; border:1px solid var(--line); border-radius:8px; padding:8px 4px; }
-  .ptile .who{ font:600 9px var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.3px; }
-  .ptile .sees{ font:700 16px var(--mono); margin-top:3px; }
-  .ptile.zero .sees{ color:var(--bad); }
-  .ptile.some .sees{ color:var(--good); }
 </style>
 </head>
 <body>
@@ -70,16 +58,14 @@
 
     <section>
       <h2>The mandate is a contract, not config</h2>
-      <div class="mandate">
-        <div class="name">ACME · agent spending card</div>
-        <div class="grid">
-          <div class="cell"><div class="lbl">Per transaction</div><div class="v">&le; 100</div></div>
-          <div class="cell"><div class="lbl">Per day</div><div class="v">&le; 250</div></div>
-          <div class="cell"><div class="lbl">Vendors</div><div class="v">allow-list</div></div>
-          <div class="cell"><div class="lbl">Auditor</div><div class="v">named party</div></div>
-        </div>
-      </div>
-      <p class="muted">The limits live on the ledger, so the agent's own code can never talk its way past them. A guardrail written as a Daml contract is enforced by the ledger itself.</p>
+      <p>ACME issues its agent a spending card, written as a Daml contract:</p>
+      <ul class="runs">
+        <li><span class="lbl">Per transaction</span><span class="v">&le; 100</span></li>
+        <li><span class="lbl">Per day</span><span class="v">&le; 250</span></li>
+        <li><span class="lbl">Vendors</span><span class="v">an allow-list</span></li>
+        <li><span class="lbl">Auditor</span><span class="v">a named party</span></li>
+      </ul>
+      <p class="muted" style="margin-top:5px">The limits live on the ledger, so the agent's own code can never talk its way past them. A guardrail written as a Daml contract is enforced by the ledger itself.</p>
     </section>
 
     <section>
@@ -106,12 +92,12 @@
 
     <section>
       <h2>Privacy comes from Canton's own model</h2>
-      <p class="muted">The same query, asked as different parties:</p>
-      <div class="privacy">
-        <div class="ptile some"><div class="who">Auditor</div><div class="sees">2</div></div>
-        <div class="ptile some"><div class="who">Each vendor</div><div class="sees">1</div></div>
-        <div class="ptile zero"><div class="who">Rival</div><div class="sees">0</div></div>
-      </div>
+      <p>After two purchases, the same "which receipts can you see?" query returns a different answer to each party:</p>
+      <ul class="runs">
+        <li><span class="lbl">Auditor</span><span class="v">2</span> &nbsp;both receipts</li>
+        <li><span class="lbl">Each vendor</span><span class="v">1</span> &nbsp;only its own</li>
+        <li><span class="lbl">Rival on the network</span><span class="v">0</span> &nbsp;nothing</li>
+      </ul>
     </section>
 
     <section>
