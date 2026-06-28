@@ -2,6 +2,10 @@
 
 **Track:** Payments, Neobanking & Agent Commerce (Canton Foundation)
 
+**▶ Live demo:** https://canton402-demo-production.up.railway.app — a real Canton
+ledger, gateway, and dashboard in one container. Every click is a transaction on
+the running ledger.
+
 Canton 402 lets a business hand its AI agent a spending **mandate** and then let
 the agent **buy services on its own** — privately, atomically, and only within
 the rules the business set. Every purchase settles payment and delivery in a

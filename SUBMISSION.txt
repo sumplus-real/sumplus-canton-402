@@ -33,6 +33,10 @@ Daml 2.10, Canton sandbox, Daml Script for the acceptance suite, a Python HTTP 4
 GITHUB
 https://github.com/sumplus-real/sumplus-canton-402
 
+LIVE INTERACTIVE DEMO
+https://canton402-demo-production.up.railway.app
+A real Canton ledger, gateway, and dashboard running in one container. Click a service to watch the x402 handshake, the atomic settlement, and the receipt chain grow; click the over-limit service to see the ledger reject it; read the privacy panel to see each party's view. "Reset demo" reissues a fresh mandate on the ledger.
+
 ONE-PAGER
 docs/Canton402-onepager.pdf (in the repo)
 
