@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Canton 402 — agent-era corporate card</title>
+<style>
+  :root{
+    --bg:#070b16; --ink:#eaf0fb; --dim:#93a4c6; --faint:#5e6f93;
+    --accent:#5b9dff; --accent2:#8b7bff; --good:#36e08a; --bad:#ff6b7d; --amber:#ffc857;
+    --line:#1d2945; --glass:rgba(20,29,52,.55);
+    --mono:'SF Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;color:var(--ink);padding:18px 24px 34px;
+    font:15px/1.55 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(900px 500px at 78% -12%,#1b2c5e55,transparent 60%),
+      radial-gradient(700px 500px at 8% 8%,#2a1c5a44,transparent 55%),
+      var(--bg);
+    background-attachment:fixed;}
+  body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:linear-gradient(#ffffff05 1px,transparent 1px),linear-gradient(90deg,#ffffff05 1px,transparent 1px);
+    background-size:46px 46px;mask:radial-gradient(circle at 50% 30%,#000,transparent 80%)}
+  .wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto}
+  header{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+  .logo{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:800;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#04152e;box-shadow:0 6px 22px #5b9dff44}
+  h1{font-size:23px;margin:0;letter-spacing:-.4px;font-weight:700}
+  .tag{font:12px var(--mono);color:#bcd0ff;background:#101b38;border:1px solid var(--line);
+    padding:4px 10px;border-radius:999px}
+  .live{margin-left:auto;display:inline-flex;align-items:center;gap:7px;color:var(--good);font:12px var(--mono)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 10px var(--good);animation:pulse 1.7s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .lede{color:var(--dim);margin:9px 0 14px;max-width:880px;font-size:13.5px}
+  .lede b{color:var(--ink);font-weight:600}
+  .dash{display:grid;gap:14px;
+    grid-template-columns:320px minmax(0,1fr) minmax(0,1fr);
+    grid-template-areas:
+      "card services flow"
+      "card receipts privacy";}
+  .a-card{grid-area:card} .a-services{grid-area:services} .a-flow{grid-area:flow}
+  .a-receipts{grid-area:receipts} .a-privacy{grid-area:privacy}
+  /* even, tidy boxes for the four right panels */
+  .a-card{display:flex;flex-direction:column}
+  .a-services,.a-flow,.a-receipts,.a-privacy{min-height:226px;display:flex;flex-direction:column}
+  .a-flow #flow{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .a-flow #flow.busy{justify-content:flex-start}
+  @media(max-width:1040px){
+    .dash{grid-template-columns:1fr;grid-template-areas:"card" "services" "flow" "receipts" "privacy"}
+    .a-services,.a-flow,.a-receipts,.a-privacy{min-height:0}
+  }
+  .panel{background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--line);border-radius:16px;padding:15px;
+    box-shadow:0 1px 0 #ffffff0d inset,0 14px 40px #00040f55}
+  .panel h2{font-size:11px;text-transform:uppercase;letter-spacing:1.3px;color:var(--faint);margin:0 0 11px;font-weight:700}
+
+  /* ---- the corporate card ---- */
+  .ccard{position:relative;border-radius:16px;padding:18px 18px 16px;overflow:hidden;
+    background:linear-gradient(135deg,#27408a 0%,#1a2a5e 45%,#141d3c 100%);
+    border:1px solid #34509a;box-shadow:0 16px 40px #00061a66, 0 1px 0 #ffffff22 inset}
+  .ccard:after{content:"";position:absolute;top:-60%;left:-30%;width:80%;height:220%;transform:rotate(18deg);
+    background:linear-gradient(90deg,transparent,#ffffff1f,transparent);animation:sheen 6s ease-in-out infinite}
+  @keyframes sheen{0%,70%{left:-40%}85%,100%{left:130%}}
+  .ccard .brand{display:flex;justify-content:space-between;align-items:center}
+  .ccard .brand .nm{font:11px var(--mono);letter-spacing:1.3px;color:#cfe0ff;white-space:nowrap}
+  .ccard .brand .nm b{color:#fff}
+  .chip{width:34px;height:25px;border-radius:5px;background:linear-gradient(135deg,#ffe7a8,#d9af52);
+    position:relative;box-shadow:0 1px 2px #00000055}
+  .chip:before{content:"";position:absolute;inset:5px 6px;border:1px solid #00000033;border-radius:2px}
+  .ccard .num{font:15px var(--mono);letter-spacing:2px;color:#eaf2ff;margin:16px 0 4px}
+  .ccard .row{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px}
+  .ccard .lbl{font:9.5px var(--mono);letter-spacing:1px;color:#9fb6e6;text-transform:uppercase}
+  .ccard .val{font-size:17px;font-weight:600;color:#fff}
+  .caps{display:flex;gap:22px;margin-top:14px}
+  .cap .n{font-size:21px;font-weight:700}
+  .cap .l{font:9.5px var(--mono);letter-spacing:.8px;color:var(--faint);text-transform:uppercase;margin-top:2px}
+
+  .spend{margin-top:16px}
+  .spend .top{display:flex;justify-content:space-between;font:11px var(--mono);color:var(--dim)}
+  .bar{height:9px;background:#0a1024;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:6px}
+  .bar > i{display:block;height:100%;width:0;border-radius:999px;
+    background:linear-gradient(90deg,var(--good),var(--amber));transition:width .6s cubic-bezier(.4,1.3,.5,1);box-shadow:0 0 12px #36e08a66}
+  .meta{margin-top:16px;font-size:13px;color:var(--dim)}
+  .meta .k{font:9.5px var(--mono);letter-spacing:.8px;color:var(--faint);text-transform:uppercase}
+  .pill{display:inline-block;font:11px var(--mono);background:#0e1730;border:1px solid var(--line);
+    border-radius:7px;padding:3px 8px;margin:5px 5px 0 0;color:#cfe0ff}
+  .note{color:var(--faint);font-size:12.5px;margin-top:auto;padding-top:16px;line-height:1.5}
+
+  /* ---- services ---- */
+  .svc{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+  .svc:first-of-type{border-top:none;padding-top:2px}
+  .svc .name{font-weight:600}
+  .svc .desc{color:var(--dim);font-size:12.5px;margin-top:2px}
+  .price{font:14px var(--mono);color:#dfe9ff}
+  button{font:600 13px/1 inherit;border:0;border-radius:10px;padding:10px 15px;cursor:pointer;
+    color:#04152e;background:linear-gradient(135deg,var(--accent),#4a86ff);box-shadow:0 6px 18px #5b9dff33;transition:.15s}
+  button:hover{transform:translateY(-1px);box-shadow:0 9px 24px #5b9dff55}
+  button:active{transform:translateY(0)}
+  button.danger{background:linear-gradient(135deg,#3a1622,#4a1a2a);color:#ff8a98;border:1px solid #6a2535;box-shadow:none}
+  button:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
+  .over{color:var(--amber);font:10px var(--mono);border:1px solid #5a4a22;border-radius:5px;padding:1px 6px;margin-left:6px}
+
+  /* ---- flow ---- */
+  #flow{font:12px/1.45 var(--mono);max-height:182px;overflow:auto;margin:0;padding-right:4px}
+  .ev{padding:10px 12px;border-left:2px solid var(--line);margin:9px 0;background:#0a112a;
+    margin:7px 0;border-radius:0 10px 10px 0;animation:slideIn .35s ease both}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+  .ev.req{border-color:var(--accent)} .ev.ok{border-color:var(--good)} .ev.block{border-color:var(--bad)}
+  .ev .t{color:var(--dim)} .ev .h{color:var(--good);word-break:break-all}
+  .ev.req .badge{color:var(--accent)} .ev.ok .badge{color:var(--good)} .ev.block .badge{color:var(--bad)}
+  .badge{font-weight:700}
+  .err{color:var(--bad)}
+  .ph{color:var(--faint)}
+  .ph-center{color:var(--faint);text-align:center;font:12px/1.6 var(--mono);padding:8px 14px;align-self:center}
+  .ph-ic{font-size:26px;color:var(--accent);opacity:.55;margin-bottom:8px}
+
+  /* ---- receipt chain ---- */
+  .chain{display:flex;flex-wrap:wrap;gap:0;align-items:center}
+  .rcpt{background:#0c142e;border:1px solid var(--line);border-radius:12px;padding:11px 13px;min-width:160px;
+    animation:pop .4s cubic-bezier(.3,1.4,.5,1) both;box-shadow:0 8px 22px #00030d44}
+  @keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+  .rcpt .s{font:11px var(--mono);color:var(--dim)}
+  .rcpt .hash{font:11px var(--mono);color:var(--good);word-break:break-all;margin-top:3px;text-shadow:0 0 12px #36e08a44}
+  .rcpt .prev{font:10px var(--mono);color:var(--faint);word-break:break-all;margin-top:3px}
+  .lk{width:26px;height:2px;background:linear-gradient(90deg,var(--accent),var(--good));position:relative;margin:0 -1px}
+  .lk:after{content:"";position:absolute;right:-1px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 8px var(--good)}
+
+  /* ---- privacy ---- */
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:13px}
+  .ptile{background:#0c142e;border:1px solid var(--line);border-radius:14px;padding:14px;transition:.3s}
+  .ptile .who{font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .ptile .cnt{font:12px var(--mono);padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+  .ptile.zero{border-color:#4a2230;background:linear-gradient(180deg,#1a0f17,#0c142e)}
+  .ptile.zero .cnt{color:var(--bad);border-color:#6a2535}
+  .ptile.all{border-color:#1f5640;background:linear-gradient(180deg,#0c1a16,#0c142e)}
+  .ptile.all .cnt{color:var(--good);border-color:#2b6b48}
+  .ptile .role{font:11px var(--mono);color:var(--faint);margin-top:3px}
+  .ptile .list{margin-top:9px;font:11px var(--mono);color:var(--dim)}
+  .ptile .list div{padding:2px 0}
+  .ptile .none{color:var(--bad);opacity:.8}
+
+  .foot{color:var(--faint);font-size:12.5px;margin-top:26px;text-align:center}
+  .foot b{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">402</div>
+    <h1>Canton&nbsp;402</h1>
+    <span class="tag">agent-era corporate card</span>
+    <span class="live"><span class="dot"></span>live ledger</span>
+  </header>
+  <div class="lede">A company gives its AI agent a spending <b>mandate</b>, written as a Daml contract.
+    The agent finds the services it is allowed to buy and pays for them by itself, and the ledger holds it
+    to the rules every time. Each button below fires a real transaction on a running Canton ledger.</div>
+
+  <div class="dash">
+    <!-- LEFT: the mandate card (hero, spans both rows) -->
+    <div class="panel a-card">
+      <h2>The mandate</h2>
+      <div class="ccard">
+        <div class="brand">
+          <div class="nm">CANTON&nbsp;<b>402</b> · spend mandate</div>
+          <div class="chip"></div>
+        </div>
+        <div class="num" id="m-num">AGENT · ACME</div>
+        <div class="caps">
+          <div class="cap"><div class="n" id="m-pertx">—</div><div class="l">per-tx cap</div></div>
+          <div class="cap"><div class="n" id="m-daily">—</div><div class="l">daily cap</div></div>
+          <div class="cap"><div class="n" id="m-bal">—</div><div class="l">balance</div></div>
+        </div>
+        <div class="row">
+          <div><div class="lbl">issued to</div><div class="val" id="m-agent">Agent</div></div>
+          <div style="text-align:right"><div class="lbl">by</div><div class="val" id="m-principal">Acme</div></div>
+        </div>
+      </div>
+
+      <div class="spend">
+        <div class="top"><span>spent today</span><span><span id="m-spent">0</span> / <span id="m-daily2">—</span></span></div>
+        <div class="bar"><i id="m-bar"></i></div>
+      </div>
+
+      <div class="meta">
+        <div class="k">allowed vendors</div>
+        <div id="m-vendors"></div>
+        <div class="k" style="margin-top:12px">auditor (need-to-know)</div>
+        <div style="color:var(--ink);margin-top:4px" id="m-auditor">—</div>
+      </div>
+
+      <div class="note">The cap check runs inside the ledger, so the agent's own code has no way around it.
+        Try the over-limit service on the right and watch the ledger turn it down.</div>
+    </div>
+
+      <div class="panel a-services">
+        <h2>Services the agent can see</h2>
+        <div id="svcs">loading…</div>
+      </div>
+
+      <div class="panel a-flow">
+        <h2>What the ledger did</h2>
+        <div id="flow"><div class="ph-center"><div class="ph-ic">⌁</div><div>Pick a service to the left.<br>The x402 request, the reply, and what the ledger committed will show up here.</div></div></div>
+      </div>
+
+      <div class="panel a-receipts">
+        <h2>Receipts · each chained to the one before it</h2>
+        <div class="chain" id="chain"><span class="ph">nothing bought yet</span></div>
+      </div>
+
+      <div class="panel a-privacy">
+        <h2>Who can see these payments</h2>
+        <div class="role" style="color:var(--faint);font-size:12.5px;margin-bottom:13px">
+          Each tile asks the ledger the same thing as a different party: which of these receipts can you see?
+          The answer comes back party by party. Rival sits on the same network and still sees nothing.</div>
+        <div class="pgrid" id="privacy"></div>
+      </div>
+  </div>
+
+  <div class="foot">Built on Daml · running on a live Canton ledger &nbsp; <b>·</b> &nbsp; a first working slice of the Canton 402 payment rail, by Sumplus</div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const flow = $("#flow");
+function ev(cls, html){
+  const d = document.createElement("div");
+  d.className = "ev " + (cls||"");
+  d.innerHTML = html;
+  flow.appendChild(d);
+  flow.scrollTop = flow.scrollHeight;
+  return d;
+}
+const short = h => h ? h.slice(0,10)+"…"+h.slice(-6) : "∅";
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+const VIEWERS = [
+  {key:"agent",   label:"Agent",         role:"the buyer"},
+  {key:"auditor", label:"Auditor",       role:"need-to-know"},
+  {key:"dataV",   label:"DataVendor",    role:"got paid"},
+  {key:"computeV",label:"ComputeVendor", role:"got paid"},
+  {key:"rival",   label:"Rival",         role:"same network"},
+];
+
+async function loadState(){
+  const s = await (await fetch("/state")).json();
+  $("#m-agent").textContent = s.agent || "Agent";
+  $("#m-num").textContent = (s.agent || "AGENT").toUpperCase() + "  ·  ACME";
+  if(s.balance!=null) $("#m-bal").textContent = (+s.balance).toFixed(0);
+  const m = s.mandate;
+  if(m){
+    $("#m-pertx").textContent = (+m.perTxCap).toFixed(0);
+    $("#m-daily").textContent = (+m.dailyCap).toFixed(0);
+    $("#m-daily2").textContent = (+m.dailyCap).toFixed(0);
+    $("#m-spent").textContent = (+m.spentToday).toFixed(0);
+    $("#m-bar").style.width = Math.min(100, 100*(+m.spentToday)/(+m.dailyCap)) + "%";
+    $("#m-auditor").textContent = m.auditor;
+    $("#m-vendors").innerHTML = m.allowedProviders.map(v=>`<span class="pill">${v}</span>`).join("");
+  }
+}
+
+async function loadServices(){
+  const j = await (await fetch("/services")).json();
+  const box = $("#svcs"); box.innerHTML = "";
+  const cap = (+($("#m-pertx").textContent)||100);
+  j.services.forEach(s=>{
+    const over = (+s.price) > cap;
+    const row = document.createElement("div");
+    row.className = "svc";
+    row.innerHTML = `
+      <div>
+        <div class="name">${s.name} ${over?'<span class="over">over cap</span>':''}</div>
+        <div class="desc">${s.description} · ${s.provider}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:13px">
+        <span class="price">${(+s.price).toFixed(0)}</span>
+        <button class="${over?'danger':''}" data-name="${s.name}">${over?'Try anyway':'Buy'}</button>
+      </div>`;
+    row.querySelector("button").onclick = e => buy(s.name, e.target);
+    box.appendChild(row);
+  });
+}
+
+async function buy(name, btn){
+  document.querySelectorAll("#svcs button").forEach(b=>b.disabled=true);
+  document.querySelectorAll("#flow .ph, #flow .ph-center").forEach(e=>e.remove());
+  flow.classList.add("busy");
+  // 1) x402: ask with no payment
+  ev("req", `<span class="badge">POST /invoke</span> <span class="t">{ "${name}" }, no payment yet</span>`);
+  await sleep(380);
+  const r1 = await fetch("/invoke", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({name})});
+  const j1 = await r1.json();
+  if(r1.status===402 && j1.accepts){
+    const a = j1.accepts[0];
+    ev("req", `<span class="badge">← 402 Payment Required</span> <span class="t">the gateway quotes ${(+a.maxAmountRequired).toFixed(0)} for ${name}</span>`);
+  }
+  await sleep(470);
+  // 2) present payment -> atomic PayAndCall
+  ev("req", `<span class="badge">POST /invoke</span> <span class="t">payment presented, ledger runs PayAndCall</span>`);
+  await sleep(380);
+  const r2 = await fetch("/invoke", {method:"POST", headers:{"Content-Type":"application/json","X-Payment":"presented"}, body:JSON.stringify({name})});
+  const j2 = await r2.json();
+  if(j2.settled){
+    ev("ok", `<span class="badge">✓ settled in one transaction</span> <span class="t">the cap check, the payment, the delivery and the receipt all commit together.</span>
+      <div class="t" style="margin-top:5px">receipt <span class="h">${j2.receiptHash}</span></div>`);
+  } else {
+    ev("block", `<span class="badge">✗ rejected by the ledger</span> <span class="err">${j2.error||"rejected"}</span>
+      <div class="t" style="margin-top:5px">The transaction rolled back whole. No money left the wallet, no service was handed over.</div>`);
+  }
+  await refresh();
+  document.querySelectorAll("#svcs button").forEach(b=>b.disabled=false);
+}
+
+async function loadChain(){
+  const j = await (await fetch("/receipts?as=agent")).json();
+  const box = $("#chain"); box.innerHTML = "";
+  if(!j.receipts.length){ box.innerHTML = '<span class="ph">nothing bought yet</span>'; return; }
+  j.receipts.forEach((r,i)=>{
+    if(i>0){ const l=document.createElement("span"); l.className="lk"; box.appendChild(l); }
+    const d=document.createElement("div"); d.className="rcpt";
+    d.innerHTML = `<div class="s">#${r.seq} · ${r.service} · ${(+r.amount).toFixed(0)}</div>
+      <div class="hash">${short(r.thisHash)}</div>
+      <div class="prev">prev ${short(r.prevHash)}</div>`;
+    box.appendChild(d);
+  });
+}
+
+async function loadPrivacy(){
+  const box = $("#privacy"); box.innerHTML = "";
+  let total = 0; const results = {};
+  for(const v of VIEWERS){
+    const j = await (await fetch("/receipts?as="+v.key)).json();
+    results[v.key] = j.receipts;
+    if(v.key==="agent") total = j.receipts.length;
+  }
+  VIEWERS.forEach(v=>{
+    const rs = results[v.key];
+    let cls = "ptile";
+    if(rs.length===0) cls+=" zero";
+    else if(rs.length===total && total>0 && (v.key==="agent"||v.key==="auditor")) cls+=" all";
+    const tile = document.createElement("div");
+    tile.className = cls;
+    tile.innerHTML = `<div class="who">${v.label}<span class="cnt">${rs.length}</span></div>
+      <div class="role">${v.role}</div>
+      <div class="list">${rs.length?rs.map(r=>`<div>#${r.seq} ${r.service}</div>`).join(""):'<div class="none">sees nothing</div>'}</div>`;
+    box.appendChild(tile);
+  });
+}
+
+async function refresh(){ await loadState(); await loadChain(); await loadPrivacy(); }
+
+(async function init(){
+  await loadState();
+  await loadServices();
+  await loadChain();
+  await loadPrivacy();
+})();
+</script>
+</body>
+</html>

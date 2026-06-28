@@ -5,7 +5,29 @@ within policy, with proof. No slideware; everything on screen is the live ledger
 
 ---
 
-## Simplest: one command (~90s, recommended)
+## Best for the video: the web dashboard (recommended)
+
+```
+scripts/web_demo.sh
+```
+
+It builds, starts the sandbox (or reuses a running one), seeds a fresh ledger,
+starts the gateway, and opens a dashboard at http://localhost:8402. Everything on
+the page is a real transaction on the running ledger. Record the browser while you:
+
+1. buy `market-data-feed`, then `inference-run` — watch the x402 handshake, the
+   atomic settlement, and the receipt chain grow,
+2. click `premium-bundle` (priced above the per-tx cap) — the ledger rejects it
+   with no money moved,
+3. end on the privacy panel — auditor sees both receipts, each vendor sees only
+   its own, the rival on the same network sees nothing.
+
+Ctrl-C in the terminal tears the demo down. Narration to read over it is in
+`docs/` and the scratch voiceover file.
+
+---
+
+## Terminal-only: one command (~90s)
 
 Record a single terminal running:
 

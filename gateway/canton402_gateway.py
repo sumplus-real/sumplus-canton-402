@@ -19,6 +19,7 @@ Run:
 import json
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlparse, parse_qs
 
 import ledger
 
@@ -26,10 +27,47 @@ PKG = os.environ.get("CANTON402_PKG", "")
 AGENT = os.environ.get("CANTON402_AGENT", "Agent")
 PORT = int(os.environ.get("CANTON402_GATEWAY_PORT", "8402"))
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+UI_PATH = os.path.join(HERE, "ui.html")
+PARTIES_PATH = os.path.join(HERE, "parties.json")
+
 OFFER_T = lambda: ledger.tid(PKG, "Canton402.Commerce", "ServiceOffer")
 RECEIPT_T = lambda: ledger.tid(PKG, "Canton402.Commerce", "PaymentReceipt")
 ASSET_T = lambda: ledger.tid(PKG, "Canton402.Asset", "Asset")
 MANDATE_T = lambda: ledger.tid(PKG, "Canton402.Mandate", "Mandate")
+
+# Map the seed's party ids (parties.json) to friendly names, both directions.
+# Lets the UI query the ledger "as" any party to show who can see which receipt.
+def _load_parties():
+    try:
+        with open(PARTIES_PATH) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+PARTIES = _load_parties()            # {"agent": "party-...::...", ...}
+ID_TO_NAME = {v: k for k, v in PARTIES.items()}
+# Human labels for the privacy panel.
+LABELS = {
+    "agent": "Agent",
+    "auditor": "Auditor",
+    "dataV": "DataVendor",
+    "computeV": "ComputeVendor",
+    "rival": "Rival",
+    "acme": "Acme (principal)",
+    "bank": "SettlementBank",
+}
+
+def party_id(key: str) -> str:
+    """Resolve a friendly key (agent/auditor/rival/...) to a real party id."""
+    return PARTIES.get(key, key)
+
+def name_for(pid: str) -> str:
+    """Friendly name for a party id (falls back to a short id)."""
+    key = ID_TO_NAME.get(pid)
+    if key:
+        return LABELS.get(key, key)
+    return pid.split("::")[0] if "::" in pid else pid
 
 
 def offers():
@@ -65,6 +103,47 @@ def receipt_chain_tip():
     rows.sort(key=lambda r: int(r["payload"]["seq"]))
     last = rows[-1]["payload"]
     return int(last["seq"]) + 1, last["thisHash"]
+
+
+def state_view():
+    """The agent's own view: its mandate (the corporate card) and balance."""
+    m = current_mandate()
+    w = best_wallet()
+    mandate = None
+    if m:
+        p = m["payload"]
+        mandate = {
+            "perTxCap": p["perTxCap"],
+            "dailyCap": p["dailyCap"],
+            "spentToday": p["spentToday"],
+            "allowedProviders": [name_for(x) for x in p["allowedProviders"]],
+            "auditor": name_for(p["auditor"]),
+        }
+    return {
+        "agent": name_for(AGENT),
+        "balance": (w["payload"]["amount"] if w else None),
+        "mandate": mandate,
+    }
+
+
+def receipts_as(key):
+    """Query PaymentReceipts visible to one party. Proves on-ledger privacy:
+    the ledger only returns what that party is a stakeholder of."""
+    pid = party_id(key)
+    rows = ledger.query(pid, [RECEIPT_T()])
+    out = []
+    for r in rows:
+        p = r["payload"]
+        out.append({
+            "seq": int(p["seq"]),
+            "service": p["service"],
+            "amount": p["amount"],
+            "provider": name_for(p["provider"]),
+            "thisHash": p["thisHash"],
+            "prevHash": p["prevHash"],
+        })
+    out.sort(key=lambda x: x["seq"])
+    return out
 
 
 def payment_requirements(offer):
@@ -122,18 +201,40 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):  # quieter
         pass
 
+    def _send_html(self, path):
+        try:
+            with open(path, "rb") as f:
+                body = f.read()
+        except OSError:
+            self._send(404, {"error": "ui.html not found"})
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
-        if self.path.rstrip("/") == "/services":
+        route = urlparse(self.path)
+        path = route.path.rstrip("/") or "/"
+        if path in ("/", "/index.html"):
+            self._send_html(UI_PATH)
+        elif path == "/services":
             out = [
                 {
                     "name": r["payload"]["name"],
                     "description": r["payload"]["description"],
                     "price": r["payload"]["price"],
-                    "provider": r["payload"]["provider"],
+                    "provider": name_for(r["payload"]["provider"]),
                 }
                 for r in offers()
             ]
             self._send(200, {"services": out})
+        elif path == "/state":
+            self._send(200, state_view())
+        elif path == "/receipts":
+            who = (parse_qs(route.query).get("as", ["agent"]) or ["agent"])[0]
+            self._send(200, {"as": LABELS.get(who, who), "receipts": receipts_as(who)})
         else:
             self._send(404, {"error": "not found"})
 

@@ -61,4 +61,16 @@ setup = do
       price = 40.0
       discoverableBy = [agent]
 
+  -- A premium offer priced above the agent's per-transaction cap (100). It is
+  -- discoverable and from an allow-listed vendor, so the only thing that stops
+  -- it is the mandate: buying it is rejected on-ledger by the per-tx cap.
+  _ <- submit dataV do
+    createCmd ServiceOffer with
+      provider = dataV
+      issuer = bank
+      name = "premium-bundle"
+      description = "Full historical dataset (above the agent's per-tx cap)"
+      price = 150.0
+      discoverableBy = [agent]
+
   pure Parties with bank, acme, agent, dataV, computeV, auditor, rival
