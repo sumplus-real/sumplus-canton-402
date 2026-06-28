@@ -29,15 +29,20 @@ def _b64url(raw: bytes) -> str:
     return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
 
 
-def mint_token(party: str, app_id: str = "canton402-gateway") -> str:
-    """Mint an HS256 dev JWT granting actAs/readAs for a single party."""
+def mint_token(party, app_id: str = "canton402-gateway") -> str:
+    """Mint an HS256 dev JWT granting actAs/readAs for one party or a list.
+
+    Pass a single party string for the common case, or a list of parties for a
+    multi-party submission (needed to archive a contract whose signatories span
+    several parties, e.g. a PaymentReceipt signed by both provider and agent)."""
+    parties = party if isinstance(party, list) else [party]
     header = {"alg": "HS256", "typ": "JWT"}
     claim = {
         "https://daml.com/ledger-api": {
             "ledgerId": LEDGER_ID,
             "applicationId": app_id,
-            "actAs": [party],
-            "readAs": [party],
+            "actAs": parties,
+            "readAs": parties,
         }
     }
     segments = [
@@ -125,6 +130,21 @@ def exercise(party: str, template_id: str, contract_id: str, choice: str, argume
     )
 
 
-def query(party: str, template_ids: list) -> list:
+def archive(party, template_id: str, contract_id: str) -> dict:
+    """Exercise the built-in Archive choice. `party` may be a list when the
+    contract's signatories span several parties."""
+    return _post(
+        "/v1/exercise",
+        party,
+        {
+            "templateId": template_id,
+            "contractId": contract_id,
+            "choice": "Archive",
+            "argument": {},
+        },
+    )
+
+
+def query(party, template_ids: list) -> list:
     res = _post("/v1/query", party, {"templateIds": template_ids})
     return res.get("result", [])

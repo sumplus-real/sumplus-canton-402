@@ -33,8 +33,14 @@ PARTIES_PATH = os.path.join(HERE, "parties.json")
 
 OFFER_T = lambda: ledger.tid(PKG, "Canton402.Commerce", "ServiceOffer")
 RECEIPT_T = lambda: ledger.tid(PKG, "Canton402.Commerce", "PaymentReceipt")
+ENTITLE_T = lambda: ledger.tid(PKG, "Canton402.Commerce", "ServiceEntitlement")
 ASSET_T = lambda: ledger.tid(PKG, "Canton402.Asset", "Asset")
 MANDATE_T = lambda: ledger.tid(PKG, "Canton402.Mandate", "Mandate")
+
+# Starting mandate / wallet for a fresh demo (matches Test.Setup).
+PER_TX_CAP = "100.0"
+DAILY_CAP = "250.0"
+START_BALANCE = "1000.0"
 
 # Map the seed's party ids (parties.json) to friendly names, both directions.
 # Lets the UI query the ledger "as" any party to show who can see which receipt.
@@ -189,6 +195,47 @@ def pay_and_call(offer):
     return res["result"]["exerciseResult"]
 
 
+def _operators():
+    """Every operator party, for multi-party authority during a reset."""
+    return [party_id(k) for k in ("agent", "dataV", "computeV", "bank", "acme", "auditor")]
+
+
+def reset_world():
+    """Return the demo to its pristine state on the live ledger, so every
+    visitor (and every recording) starts clean. Archives the agent's receipts,
+    entitlements, holdings, and mandate, then recreates a full wallet and a
+    fresh mandate. Offers are nonconsuming and survive, so they are left alone.
+
+    All of this is real on-ledger work: a multi-party token carries the combined
+    authority of the signatories whose contracts are being archived."""
+    ops = _operators()
+    agent = party_id("agent")
+    for r in ledger.query(agent, [RECEIPT_T()]):
+        ledger.archive(ops, RECEIPT_T(), r["contractId"])
+    for e in ledger.query(agent, [ENTITLE_T()]):
+        ledger.archive(ops, ENTITLE_T(), e["contractId"])
+    for a in ledger.query(agent, [ASSET_T()]):
+        if a["payload"]["owner"] == agent:
+            ledger.archive(ops, ASSET_T(), a["contractId"])
+    for m in ledger.query(party_id("acme"), [MANDATE_T()]):
+        ledger.archive(ops, MANDATE_T(), m["contractId"])
+
+    ledger.create(party_id("bank"), ASSET_T(), {
+        "issuer": party_id("bank"),
+        "owner": agent,
+        "amount": START_BALANCE,
+    })
+    ledger.create(party_id("acme"), MANDATE_T(), {
+        "principal": party_id("acme"),
+        "agent": agent,
+        "auditor": party_id("auditor"),
+        "perTxCap": PER_TX_CAP,
+        "dailyCap": DAILY_CAP,
+        "spentToday": "0.0",
+        "allowedProviders": [party_id("dataV"), party_id("computeV")],
+    })
+
+
 class Handler(BaseHTTPRequestHandler):
     def _send(self, code, body):
         payload = json.dumps(body, indent=2).encode()
@@ -239,7 +286,15 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {"error": "not found"})
 
     def do_POST(self):
-        if self.path.rstrip("/") != "/invoke":
+        path = self.path.rstrip("/") or "/"
+        if path == "/reset":
+            try:
+                reset_world()
+                self._send(200, {"ok": True})
+            except Exception as e:
+                self._send(500, {"ok": False, "error": str(e)})
+            return
+        if path != "/invoke":
             self._send(404, {"error": "not found"})
             return
         length = int(self.headers.get("Content-Length", "0"))
@@ -253,7 +308,7 @@ class Handler(BaseHTTPRequestHandler):
             # x402 handshake: tell the agent what it must pay.
             self._send(402, payment_requirements(offer))
             return
-        try:
+        def settle():
             result = pay_and_call(offer)
             self._send(
                 200,
@@ -266,8 +321,24 @@ class Handler(BaseHTTPRequestHandler):
                     "entitlement": result["entitlement"],
                 },
             )
+
+        try:
+            settle()
         except Exception as e:  # surface ledger rejections (e.g. policy breach)
-            self._send(402, {"settled": False, "error": str(e)})
+            msg = str(e)
+            # Self-heal: across many visitors the shared daily cap can fill up
+            # and block an in-policy purchase. Reset the world and retry once so
+            # the demo never looks broken. The per-transaction block (premium
+            # over the cap) is the intended lesson, so leave it untouched.
+            in_policy = float(offer["payload"]["price"]) <= float(PER_TX_CAP)
+            if "daily cap" in msg.lower() and in_policy:
+                try:
+                    reset_world()
+                    settle()
+                    return
+                except Exception as e2:
+                    msg = str(e2)
+            self._send(402, {"settled": False, "error": msg})
 
 
 def main():

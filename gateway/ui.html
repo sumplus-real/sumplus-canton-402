@@ -99,6 +99,8 @@
   button:hover{transform:translateY(-1px);box-shadow:0 9px 24px #5b9dff55}
   button:active{transform:translateY(0)}
   button.danger{background:linear-gradient(135deg,#3a1622,#4a1a2a);color:#ff8a98;border:1px solid #6a2535;box-shadow:none}
+  button.ghost{background:#101b38;color:#bcd0ff;border:1px solid var(--line);box-shadow:none;font:600 12px var(--mono);padding:7px 12px}
+  button.ghost:hover{background:#16244a;transform:none;box-shadow:none}
   button:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
   .over{color:var(--amber);font:10px var(--mono);border:1px solid #5a4a22;border-radius:5px;padding:1px 6px;margin-left:6px}
 
@@ -152,6 +154,7 @@
     <h1>Canton&nbsp;402</h1>
     <span class="tag">agent-era corporate card</span>
     <span class="live"><span class="dot"></span>live ledger</span>
+    <button id="reset" class="ghost">↺ Reset demo</button>
   </header>
   <div class="lede">A company gives its AI agent a spending <b>mandate</b>, written as a Daml contract.
     The agent finds the services it is allowed to buy and pays for them by itself, and the ledger holds it
@@ -235,6 +238,23 @@ function ev(cls, html){
 const short = h => h ? h.slice(0,10)+"…"+h.slice(-6) : "∅";
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
+// Fetch + parse with a few retries. A cold Canton container, or the edge in
+// front of it, will occasionally hand back an empty body; one retry clears it,
+// so the demo never shows a blank failure to a judge.
+async function jfetch(path, opts){
+  let last;
+  for(let i=0;i<4;i++){
+    try{
+      const r = await fetch(path, opts);
+      const t = await r.text();
+      if(t){ return JSON.parse(t); }
+      last = new Error("empty response");
+    }catch(e){ last = e; }
+    await sleep(500*(i+1));
+  }
+  throw last || new Error("request failed");
+}
+
 const VIEWERS = [
   {key:"agent",   label:"Agent",         role:"the buyer"},
   {key:"auditor", label:"Auditor",       role:"need-to-know"},
@@ -244,7 +264,7 @@ const VIEWERS = [
 ];
 
 async function loadState(){
-  const s = await (await fetch("/state")).json();
+  const s = await jfetch("/state");
   $("#m-agent").textContent = s.agent || "Agent";
   $("#m-num").textContent = (s.agent || "AGENT").toUpperCase() + "  ·  ACME";
   if(s.balance!=null) $("#m-bal").textContent = (+s.balance).toFixed(0);
@@ -261,7 +281,7 @@ async function loadState(){
 }
 
 async function loadServices(){
-  const j = await (await fetch("/services")).json();
+  const j = await jfetch("/services");
   const box = $("#svcs"); box.innerHTML = "";
   const cap = (+($("#m-pertx").textContent)||100);
   j.services.forEach(s=>{
@@ -283,37 +303,40 @@ async function loadServices(){
 }
 
 async function buy(name, btn){
-  document.querySelectorAll("#svcs button").forEach(b=>b.disabled=true);
+  document.querySelectorAll("#svcs button, #reset").forEach(b=>b.disabled=true);
   document.querySelectorAll("#flow .ph, #flow .ph-center").forEach(e=>e.remove());
   flow.classList.add("busy");
-  // 1) x402: ask with no payment
-  ev("req", `<span class="badge">POST /invoke</span> <span class="t">{ "${name}" }, no payment yet</span>`);
-  await sleep(380);
-  const r1 = await fetch("/invoke", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({name})});
-  const j1 = await r1.json();
-  if(r1.status===402 && j1.accepts){
-    const a = j1.accepts[0];
-    ev("req", `<span class="badge">← 402 Payment Required</span> <span class="t">the gateway quotes ${(+a.maxAmountRequired).toFixed(0)} for ${name}</span>`);
+  try{
+    // 1) x402: ask with no payment
+    ev("req", `<span class="badge">POST /invoke</span> <span class="t">{ "${name}" }, no payment yet</span>`);
+    await sleep(380);
+    const j1 = await jfetch("/invoke", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({name})});
+    if(j1.accepts){
+      const a = j1.accepts[0];
+      ev("req", `<span class="badge">← 402 Payment Required</span> <span class="t">the gateway quotes ${(+a.maxAmountRequired).toFixed(0)} for ${name}</span>`);
+    }
+    await sleep(470);
+    // 2) present payment -> atomic PayAndCall
+    ev("req", `<span class="badge">POST /invoke</span> <span class="t">payment presented, ledger runs PayAndCall</span>`);
+    await sleep(380);
+    const j2 = await jfetch("/invoke", {method:"POST", headers:{"Content-Type":"application/json","X-Payment":"presented"}, body:JSON.stringify({name})});
+    if(j2.settled){
+      ev("ok", `<span class="badge">✓ settled in one transaction</span> <span class="t">the cap check, the payment, the delivery and the receipt all commit together.</span>
+        <div class="t" style="margin-top:5px">receipt <span class="h">${j2.receiptHash}</span></div>`);
+    } else {
+      ev("block", `<span class="badge">✗ rejected by the ledger</span> <span class="err">${j2.error||"rejected"}</span>
+        <div class="t" style="margin-top:5px">The transaction rolled back whole. No money left the wallet, no service was handed over.</div>`);
+    }
+    await refresh();
+  }catch(e){
+    ev("block", `<span class="badge">connection hiccup</span> <span class="err">${e.message||e}</span> <span class="t">— try that again.</span>`);
+  }finally{
+    document.querySelectorAll("#svcs button, #reset").forEach(b=>b.disabled=false);
   }
-  await sleep(470);
-  // 2) present payment -> atomic PayAndCall
-  ev("req", `<span class="badge">POST /invoke</span> <span class="t">payment presented, ledger runs PayAndCall</span>`);
-  await sleep(380);
-  const r2 = await fetch("/invoke", {method:"POST", headers:{"Content-Type":"application/json","X-Payment":"presented"}, body:JSON.stringify({name})});
-  const j2 = await r2.json();
-  if(j2.settled){
-    ev("ok", `<span class="badge">✓ settled in one transaction</span> <span class="t">the cap check, the payment, the delivery and the receipt all commit together.</span>
-      <div class="t" style="margin-top:5px">receipt <span class="h">${j2.receiptHash}</span></div>`);
-  } else {
-    ev("block", `<span class="badge">✗ rejected by the ledger</span> <span class="err">${j2.error||"rejected"}</span>
-      <div class="t" style="margin-top:5px">The transaction rolled back whole. No money left the wallet, no service was handed over.</div>`);
-  }
-  await refresh();
-  document.querySelectorAll("#svcs button").forEach(b=>b.disabled=false);
 }
 
 async function loadChain(){
-  const j = await (await fetch("/receipts?as=agent")).json();
+  const j = await jfetch("/receipts?as=agent");
   const box = $("#chain"); box.innerHTML = "";
   if(!j.receipts.length){ box.innerHTML = '<span class="ph">nothing bought yet</span>'; return; }
   j.receipts.forEach((r,i)=>{
@@ -330,7 +353,7 @@ async function loadPrivacy(){
   const box = $("#privacy"); box.innerHTML = "";
   let total = 0; const results = {};
   for(const v of VIEWERS){
-    const j = await (await fetch("/receipts?as="+v.key)).json();
+    const j = await jfetch("/receipts?as="+v.key);
     results[v.key] = j.receipts;
     if(v.key==="agent") total = j.receipts.length;
   }
@@ -350,11 +373,39 @@ async function loadPrivacy(){
 
 async function refresh(){ await loadState(); await loadChain(); await loadPrivacy(); }
 
+const FRESH_FLOW = '<div class="ph-center"><div class="ph-ic">⌁</div><div>Pick a service to the left.<br>The x402 request, the reply, and what the ledger committed will show up here.</div></div>';
+
+async function resetDemo(){
+  const btn = $("#reset");
+  document.querySelectorAll("#svcs button, #reset").forEach(b=>b.disabled=true);
+  if(btn) btn.textContent = "resetting…";
+  flow.classList.remove("busy");
+  flow.innerHTML = '<div class="ph-center"><div class="ph-ic">↺</div><div>Reissuing a fresh mandate on the ledger…</div></div>';
+  try{
+    await jfetch("/reset", {method:"POST"});
+    await refresh();
+    flow.innerHTML = FRESH_FLOW;
+  }catch(e){
+    flow.innerHTML = '<div class="ph-center"><div class="ph-ic">⚠</div><div>Reset hiccup. Try again.</div></div>';
+  }finally{
+    if(btn) btn.textContent = "↺ Reset demo";
+    document.querySelectorAll("#svcs button, #reset").forEach(b=>b.disabled=false);
+  }
+}
+
 (async function init(){
+  $("#reset").onclick = resetDemo;
+  // Paint whatever is on the ledger right now, fast.
   await loadState();
   await loadServices();
   await loadChain();
   await loadPrivacy();
+  // First load in this browser tab starts everyone from the same clean slate
+  // (a real on-ledger reset). Refreshes within the tab keep your own state.
+  if(!sessionStorage.getItem("c402seen")){
+    sessionStorage.setItem("c402seen","1");
+    try{ await jfetch("/reset", {method:"POST"}); await refresh(); flow.innerHTML = FRESH_FLOW; }catch(e){}
+  }
 })();
 </script>
 </body>
