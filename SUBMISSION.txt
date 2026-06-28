@@ -33,6 +33,9 @@ Daml 2.10, Canton sandbox, Daml Script for the acceptance suite, a Python HTTP 4
 GITHUB
 https://github.com/sumplus-real/sumplus-canton-402
 
+ONE-PAGER
+docs/Canton402-onepager.pdf (in the repo)
+
 DEMO VIDEO
 <add link>
 
