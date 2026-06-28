@@ -1,4 +1,4 @@
-# Canton 402 — Architecture
+# Canton 402: Architecture
 
 ## 1. What it is
 
@@ -30,16 +30,16 @@ transaction, with the authority of the agent (choice controller) and the provide
 (offer signatory), it performs four sub-actions that commit together or roll back
 together:
 
-1. **Policy gate** — `exercise mandateCid Authorize`. Checks the vendor allow-list,
+1. **Policy gate:** `exercise mandateCid Authorize`. Checks the vendor allow-list,
    per-transaction cap, and running daily cap; recreates the mandate with the new
    daily total. Any breach aborts the entire transaction.
-2. **Settlement** — `exercise assetCid Split`. Moves `price` to the provider and
+2. **Settlement:** `exercise assetCid Split`. Moves `price` to the provider and
    returns change to the agent. The split is controlled by the asset's owner, so
    it succeeds only when the agent actually holds the funds, and the asset's
    issuer is checked against the offer's expected settlement issuer.
-3. **Delivery** — `create ServiceEntitlement`. The agent's proof it may now consume
+3. **Delivery:** `create ServiceEntitlement`. The agent's proof it may now consume
    the service.
-4. **Receipt** — `create PaymentReceipt`, with `thisHash = sha256(seq | service |
+4. **Receipt:** `create PaymentReceipt`, with `thisHash = sha256(seq | service |
    price | prevHash)`. Hash-chained to the previous receipt.
 
 Because all four are sub-transactions of one commit, the protocol has no partial
@@ -65,8 +65,8 @@ the other vendor's; the auditor sees exactly the settled receipts. A vendor neve
 learns the principal's caps or which other vendors are on the allow-list.
 
 A regulator can be added as a receipt observer for disclosure-on-demand without
-making any payment public — the institutional middle ground a transparent chain
-cannot offer.
+making any payment public. That is the institutional middle ground a transparent
+chain cannot offer.
 
 ## 5. Threat model
 
@@ -88,7 +88,7 @@ exploration. This is the same Daml runtime Canton uses; the contracts are
 network-portable without change.
 
 **Gateway.** The Canton 402 gateway (`gateway/`) exposes the protocol over HTTP
-and MCP so any agent — including ones with no Canton SDK — can discover and pay
+and MCP so any agent, including ones with no Canton SDK, can discover and pay
 for services. It returns an HTTP 402 with payment requirements (x402-compatible
 header shape), accepts the agent's authorization, and submits the `PayAndCall`
 to the ledger via the Daml JSON API.

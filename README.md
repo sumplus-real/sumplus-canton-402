@@ -1,21 +1,21 @@
-# Canton 402 — Private, Policy-Bound Pay-and-Call for AI Agents
+# Canton 402: Private, Policy-Bound Pay-and-Call for AI Agents
 
 **Track:** Payments, Neobanking & Agent Commerce (Canton Foundation)
 
-**▶ Live demo:** https://canton402-demo-production.up.railway.app — a real Canton
+**▶ Live demo:** https://canton402-demo-production.up.railway.app . A real Canton
 ledger, gateway, and dashboard in one container. Every click is a transaction on
 the running ledger.
 
 Canton 402 lets a business hand its AI agent a spending **mandate** and then let
-the agent **buy services on its own** — privately, atomically, and only within
-the rules the business set. Every purchase settles payment and delivery in a
-single Daml transaction, stays visible only to the two counterparties and a
-named auditor, and leaves a tamper-evident receipt.
+the agent **buy services on its own**. The agent stays private, settles each
+purchase atomically, and can only spend within the rules the business set. Every
+purchase settles payment and delivery in a single Daml transaction, stays
+visible only to the two counterparties and a named auditor, and leaves a
+tamper-evident receipt.
 
 It is an agent-era corporate card: programmable limits, an allow-list of
-vendors, an auditable trail, and privacy by default — built on Canton because
-that is the chain where a payment can be real, final, and not broadcast to the
-world.
+vendors, an auditable trail, and privacy by default. We build on Canton because
+a payment there can settle for real and stay off the public record.
 
 ---
 
@@ -83,9 +83,9 @@ Execution Layer)**. CAEL ships three layers across four milestones; the Canton
 **This hackathon project is a working vertical slice of exactly that layer.** It
 takes the contract suite the grant *proposed* (`PaymentObligation` /
 `PaymentReceipt` / `PaidService` / `AgentPermissionFramework`) and makes it
-*run* end-to-end, today, on the Daml ledger — policy enforcement, atomic
-settlement, privacy, and the hash-chained audit trail. It is the proof that the
-grant's hardest milestone is real and buildable, not just specified.
+*run* end-to-end, today, on the Daml ledger: policy enforcement, atomic
+settlement, privacy, and the hash-chained audit trail. It's proof that the
+grant's hardest milestone actually builds.
 
 It also reuses Sumplus's existing products by design rather than reinventing
 them: the **Maria** policy model becomes the `Mandate` contract, the **Arsenal**

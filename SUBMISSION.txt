@@ -1,4 +1,4 @@
-CANTON 402 — SUBMISSION FIELDS (Build on Canton hackathon)
+CANTON 402: SUBMISSION FIELDS (Build on Canton hackathon)
 Track 3: Payments, Neobanking & Agent Commerce
 
 Paste each field into the submission form. Plain text, no formatting.
@@ -11,10 +11,10 @@ ONE-LINER
 An agent-era corporate card on Canton: a business gives its AI agent a spending mandate, and the agent buys services on its own, privately and only within the rules.
 
 WHAT IT DOES
-AI agents are starting to pay for things, such as data feeds, compute, and other agents' services. Two problems show up the moment they do. You cannot trust an agent with an open wallet, and business payments are not meant to be public. Canton 402 solves both. A company issues its agent a mandate as a Daml contract: a per-transaction cap, a daily cap, an allow-list of vendors, and an auditor who can see the receipts. The agent then discovers and buys services by itself. Every purchase settles payment and delivery in one atomic Daml transaction, stays visible only to the two counterparties and the auditor, and leaves a hash-chained receipt that anyone holding it can re-verify.
+AI agents are starting to pay for things: data feeds, compute, other agents' work. Two problems show up the moment they do. You can't hand an agent an open wallet, and business payments aren't meant to be public. Canton 402 solves both. A company issues its agent a mandate as a Daml contract: a per-transaction cap, a daily cap, an allow-list of vendors, and an auditor who can see the receipts. The agent discovers and buys services on its own. Every purchase settles payment and delivery in one atomic Daml transaction, stays visible only to the two counterparties and the auditor, and leaves a hash-chained receipt anyone holding it can re-verify.
 
 HOW IT WORKS
-The core is one choice, PayAndCall, on a vendor's ServiceOffer. In a single atomic transaction it (1) checks the agent's mandate, (2) settles payment to the vendor with change back to the agent, (3) delivers the service entitlement, and (4) writes a hash-chained receipt. All four commit together or none do, so there is never payment without delivery or a spend that breaks policy. The mandate is enforced on the ledger, not in the agent's code, so a buggy or prompt-injected agent still cannot overspend or pay a vendor that is not on the list. Privacy comes from Canton's stakeholder model: a rival party sees none of the company's receipts, each vendor sees only its own, and the auditor sees exactly the settled ones.
+The core is one choice, PayAndCall, on a vendor's ServiceOffer. In a single atomic transaction it (1) checks the agent's mandate, (2) settles payment to the vendor with change back to the agent, (3) delivers the service entitlement, and (4) writes a hash-chained receipt. All four commit together or none do, so there's never payment without delivery or a spend that breaks policy. The ledger enforces the mandate, not the agent's code, so a buggy or prompt-injected agent still can't overspend or pay a vendor that isn't on the list. Privacy comes from Canton's stakeholder model: a rival party sees none of the company's receipts, each vendor sees only its own, and the auditor sees exactly the settled ones.
 
 The four contracts map onto Sumplus's existing products. The Mandate is the Maria policy layer expressed in Daml. The ServiceOffer is the Arsenal paid-skill model. The hash-chained PaymentReceipt is the same verifiable-audit pattern Sumplus already runs on its EVM trading agent, here native to Daml. An x402-compatible HTTP gateway lets any agent, even one with no Canton SDK, discover and pay for services over plain HTTP.
 
@@ -35,7 +35,7 @@ https://github.com/sumplus-real/sumplus-canton-402
 
 LIVE INTERACTIVE DEMO
 https://canton402-demo-production.up.railway.app
-A real Canton ledger, gateway, and dashboard running in one container. Click a service to watch the x402 handshake, the atomic settlement, and the receipt chain grow; click the over-limit service to see the ledger reject it; read the privacy panel to see each party's view. "Reset demo" reissues a fresh mandate on the ledger.
+A real Canton ledger, gateway, and dashboard running in one container. Click a service and the page walks through the x402 exchange and settles it on the ledger, and a new receipt joins the chain. Click the over-limit service and the ledger turns it down. The privacy panel shows what each party can see. "Reset demo" reissues a fresh mandate on the ledger.
 
 ONE-PAGER
 docs/Canton402-onepager.pdf (in the repo)

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Canton 402 — agent-era corporate card</title>
+<title>Canton 402 · agent-era corporate card</title>
 <style>
   :root{
     --bg:#070b16; --ink:#eaf0fb; --dim:#93a4c6; --faint:#5e6f93;
@@ -329,7 +329,7 @@ async function buy(name, btn){
     }
     await refresh();
   }catch(e){
-    ev("block", `<span class="badge">connection hiccup</span> <span class="err">${e.message||e}</span> <span class="t">— try that again.</span>`);
+    ev("block", `<span class="badge">connection hiccup</span> <span class="err">${e.message||e}</span> <span class="t">Try that again.</span>`);
   }finally{
     document.querySelectorAll("#svcs button, #reset").forEach(b=>b.disabled=false);
   }

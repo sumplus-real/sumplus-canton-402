@@ -1,7 +1,7 @@
 # Demo video script (3-5 min)
 
-Goal: show a real AI agent buying services on Canton on its own — privately,
-within policy, with proof. No slideware; everything on screen is the live ledger.
+Goal: show a real AI agent buying services on Canton on its own, within policy
+and with proof. No slideware; everything on screen is the live ledger.
 
 ---
 
@@ -15,12 +15,12 @@ It builds, starts the sandbox (or reuses a running one), seeds a fresh ledger,
 starts the gateway, and opens a dashboard at http://localhost:8402. Everything on
 the page is a real transaction on the running ledger. Record the browser while you:
 
-1. buy `market-data-feed`, then `inference-run` — watch the x402 handshake, the
-   atomic settlement, and the receipt chain grow,
-2. click `premium-bundle` (priced above the per-tx cap) — the ledger rejects it
+1. buy `market-data-feed`, then `inference-run`, and watch the x402 handshake,
+   the atomic settlement, and the receipt chain grow,
+2. click `premium-bundle` (priced above the per-tx cap); the ledger rejects it
    with no money moved,
-3. end on the privacy panel — auditor sees both receipts, each vendor sees only
-   its own, the rival on the same network sees nothing.
+3. end on the privacy panel. The auditor sees both receipts, each vendor sees
+   only its own, and the rival on the same network sees nothing.
 
 Ctrl-C in the terminal tears the demo down. Narration to read over it is in
 `docs/` and the scratch voiceover file.
@@ -99,9 +99,9 @@ Optionally open Navigator (the browser tab `daml start` opened) and show the
 
 ## Part 4 — Close (15s)
 
-> "Real Daml, real policy, real privacy. This is a working slice of the Canton
-> 402 payment protocol from our CAEL grant — the agent-commerce rail Canton
-> doesn't have yet."
+> "It's real Daml. The policy and the privacy are enforced by the ledger, not
+> faked for the demo. This is a working slice of the Canton 402 payment protocol
+> from our CAEL grant, the agent-commerce rail Canton doesn't have yet."
 
 ---
 
