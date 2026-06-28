@@ -1,0 +1,10 @@
+.git
+.daml
+*.dar
+log
+**/__pycache__
+**/*.pyc
+gateway/parties.json
+docs/*.pdf
+navigator.log
+*.log
