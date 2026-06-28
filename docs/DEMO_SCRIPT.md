@@ -3,7 +3,24 @@
 Goal: show a real AI agent buying services on Canton on its own — privately,
 within policy, with proof. No slideware; everything on screen is the live ledger.
 
-Record three screens in sequence. Keep narration plain.
+---
+
+## Simplest: one command (~90s, recommended)
+
+Record a single terminal running:
+
+```
+scripts/demo_video.sh
+```
+
+It builds, runs the acceptance suite green, then prints a narrated run on a
+simulated ledger: the mandate, two atomic payments with hash-chained receipts,
+an overspend blocked on-ledger, and the privacy check across five parties. No
+sandbox to start. Read the lines aloud as they appear, or add the narration
+below as voiceover. This screen alone proves the whole product.
+
+For a richer three-screen version (acceptance suite, then the live HTTP-402
+agent against `daml start`), follow the parts below.
 
 ---
 
