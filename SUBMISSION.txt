@@ -30,7 +30,7 @@ TECH
 Daml 2.10, Canton sandbox, Daml Script for the acceptance suite, a Python HTTP 402 gateway over the Daml JSON API. Apache-2.0.
 
 GITHUB
-<add repo URL after push>
+https://github.com/sumplus-real/sumplus-canton-402
 
 DEMO VIDEO
 <add link>
