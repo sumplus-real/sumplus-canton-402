@@ -80,7 +80,7 @@ Execution Layer)**. CAEL ships three layers across four milestones; the Canton
 402 payment protocol and its Daml contract suite are scoped to **M2–M3 (Q3–Q4
 2026)**.
 
-**This hackathon project is a working vertical slice of exactly that layer.** It
+**This hackathon project builds and runs that layer's core today.** It
 takes the contract suite the grant *proposed* (`PaymentObligation` /
 `PaymentReceipt` / `PaidService` / `AgentPermissionFramework`) and makes it
 *run* end-to-end, today, on the Daml ledger: policy enforcement, atomic
