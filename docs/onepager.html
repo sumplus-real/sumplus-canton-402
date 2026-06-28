@@ -2,61 +2,55 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Canton 402 — one-pager</title>
+<title>Canton 402 one-pager</title>
 <style>
   :root{
     --accent:#3b7de0; --violet:#6a5bff; --ink:#0d1322; --dim:#46536e;
     --faint:#8492ad; --line:#dfe5f0; --good:#1aa667; --bad:#d94459;
-    --panel:#f6f8fc;
     --mono:'SF Mono',ui-monospace,Menlo,Consolas,monospace;
     --sans:-apple-system,'Helvetica Neue',Arial,sans-serif;
   }
   @page{ size:Letter; margin:0; }
   *{ box-sizing:border-box; margin:0; padding:0; }
   html,body{ background:#fff; color:var(--ink); font-family:var(--sans); }
-  .sheet{ width:8.5in; min-height:11in; padding:0.5in 0.55in 0.4in; display:flex; flex-direction:column; }
+  .sheet{ width:8.5in; min-height:11in; padding:0.5in 0.6in 0.4in; }
 
-  header{ display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid var(--ink); padding-bottom:10px; }
+  header{ border-bottom:2px solid var(--ink); padding-bottom:9px; }
   .brand{ font-weight:800; font-size:23px; letter-spacing:-.5px; }
   .brand .dot{ color:var(--accent); }
-  .track{ font:600 10.5px var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.6px; text-align:right; line-height:1.5; }
-  .tag{ margin-top:9px; font-size:13.5px; color:var(--dim); font-weight:500; max-width:6.1in; line-height:1.45; }
+  .tag{ margin-top:8px; font-size:13px; color:var(--dim); font-weight:500; line-height:1.45; }
 
-  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:14px; flex:1; }
-  h2{ font:700 11px var(--mono); letter-spacing:.7px; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
-  section{ margin-bottom:13px; }
-  p{ font-size:11.6px; line-height:1.5; color:#1c2740; }
+  .body{ margin-top:13px; }
+  section{ margin-bottom:11px; }
+  h2{ font:700 11px var(--mono); letter-spacing:.7px; text-transform:uppercase; color:var(--accent); margin-bottom:5px; }
+  p{ font-size:11.5px; line-height:1.46; color:#1c2740; }
   .muted{ color:var(--dim); }
   b{ color:var(--ink); }
 
-  ol.steps{ list-style:none; counter-reset:s; }
-  ol.steps li{ counter-increment:s; position:relative; padding-left:22px; font-size:11.4px; line-height:1.45; margin-bottom:4px; color:#1c2740; }
+  ol.steps{ list-style:none; counter-reset:s; margin-top:5px; }
+  ol.steps li{ counter-increment:s; position:relative; padding-left:22px; font-size:11.4px; line-height:1.4; margin-bottom:3px; color:#1c2740; }
   ol.steps li::before{ content:counter(s); position:absolute; left:0; top:0; width:15px; height:15px; border-radius:50%; background:var(--accent); color:#fff; font:700 9px var(--mono); display:flex; align-items:center; justify-content:center; }
 
-  .card{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:11px 13px; }
-  .mandate{ background:linear-gradient(135deg,#1b2d52,#2a2350); color:#eaf0fb; border:none; }
-  .mandate .lbl{ font:600 8.5px var(--mono); letter-spacing:.5px; text-transform:uppercase; color:#9fb2d8; }
-  .mandate .row{ display:flex; justify-content:space-between; align-items:baseline; margin-top:5px; }
-  .mandate .v{ font:600 12px var(--mono); }
-  .mandate .name{ font-weight:800; font-size:14px; letter-spacing:.3px; }
+  /* mandate: a light, bordered box (no dark fill) */
+  .mandate{ border:1px solid var(--line); border-radius:10px; padding:11px 14px; margin-bottom:6px; }
+  .mandate .name{ font-weight:800; font-size:13px; letter-spacing:.2px; margin-bottom:6px; }
+  .mandate .grid{ display:flex; gap:26px; flex-wrap:wrap; }
+  .mandate .cell .lbl{ font:600 8.5px var(--mono); letter-spacing:.5px; text-transform:uppercase; color:var(--faint); }
+  .mandate .cell .v{ font:600 13px var(--mono); color:var(--accent); margin-top:1px; }
 
-  ul.runs{ list-style:none; }
-  ul.runs li{ font-size:11.4px; line-height:1.45; padding-left:16px; position:relative; margin-bottom:5px; color:#1c2740; }
+  ul.runs{ list-style:none; margin-top:4px; }
+  ul.runs li{ font-size:11.4px; line-height:1.42; padding-left:15px; position:relative; margin-bottom:3px; color:#1c2740; }
   ul.runs li::before{ content:'▸'; position:absolute; left:0; color:var(--accent); font-size:10px; top:1px; }
 
-  .maps{ font-size:10.8px; line-height:1.5; }
-  .maps .k{ font:600 10.5px var(--mono); color:var(--violet); }
+  .maps{ font-size:11.3px; line-height:1.5; }
+  .maps .k{ font:600 11px var(--mono); color:var(--violet); }
 
-  .privacy{ display:flex; gap:6px; margin-top:7px; }
-  .ptile{ flex:1; text-align:center; border:1px solid var(--line); border-radius:7px; padding:6px 3px; background:#fff; }
-  .ptile .who{ font:600 8.5px var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.3px; }
-  .ptile .sees{ font:700 14px var(--mono); margin-top:2px; }
+  .privacy{ display:flex; gap:8px; margin-top:7px; }
+  .ptile{ flex:1; text-align:center; border:1px solid var(--line); border-radius:8px; padding:8px 4px; }
+  .ptile .who{ font:600 9px var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.3px; }
+  .ptile .sees{ font:700 16px var(--mono); margin-top:3px; }
   .ptile.zero .sees{ color:var(--bad); }
   .ptile.some .sees{ color:var(--good); }
-
-  footer{ border-top:1px solid var(--line); margin-top:8px; padding-top:8px; display:flex; justify-content:space-between; align-items:center; font-size:10.6px; color:var(--dim); }
-  footer .lk{ font:600 10.6px var(--mono); color:var(--accent); }
-  footer b{ color:var(--ink); }
 </style>
 </head>
 <body>
@@ -67,66 +61,64 @@
   </header>
   <div class="tag">An agent-era corporate card on Canton. A business hands its AI agent a spending mandate, and the agent buys services on its own. It stays private, settles atomically, and can only spend within the rules.</div>
 
-  <div class="cols">
-    <!-- LEFT -->
-    <div>
-      <section>
-        <h2>The problem</h2>
-        <p><b>Agents are starting to spend money</b> on data, compute, and other agents' services. Two things break the moment they do. You cannot hand an agent an open wallet: a buggy or prompt-injected agent should not be able to drain an account or pay a stranger. And business payments are not meant to be public, so a transparent chain that exposes every vendor, price, and volume is a non-starter for real treasury flows.</p>
-      </section>
+  <div class="body">
 
-      <section>
-        <h2>The mandate is a contract, not config</h2>
-        <div class="card mandate">
-          <div class="name">ACME · agent spending card</div>
-          <div class="row"><span class="lbl">Per transaction</span><span class="v">≤ 100</span></div>
-          <div class="row"><span class="lbl">Per day</span><span class="v">≤ 250</span></div>
-          <div class="row"><span class="lbl">Vendors</span><span class="v">allow-list</span></div>
-          <div class="row"><span class="lbl">Auditor</span><span class="v">named party</span></div>
+    <section>
+      <h2>The problem</h2>
+      <p><b>Agents are starting to spend money</b> on data, compute, and other agents' services. Two things break the moment they do. You cannot hand an agent an open wallet: a buggy or prompt-injected agent should not be able to drain an account or pay a stranger. And business payments are not meant to be public, so a transparent chain that exposes every vendor, price, and volume is a non-starter for real treasury flows.</p>
+    </section>
+
+    <section>
+      <h2>The mandate is a contract, not config</h2>
+      <div class="mandate">
+        <div class="name">ACME · agent spending card</div>
+        <div class="grid">
+          <div class="cell"><div class="lbl">Per transaction</div><div class="v">&le; 100</div></div>
+          <div class="cell"><div class="lbl">Per day</div><div class="v">&le; 250</div></div>
+          <div class="cell"><div class="lbl">Vendors</div><div class="v">allow-list</div></div>
+          <div class="cell"><div class="lbl">Auditor</div><div class="v">named party</div></div>
         </div>
-        <p class="muted" style="margin-top:7px">The limits live on the ledger, so the agent's own code can never talk its way past them. A guardrail written as a Daml contract is enforced by the ledger itself.</p>
-      </section>
+      </div>
+      <p class="muted">The limits live on the ledger, so the agent's own code can never talk its way past them. A guardrail written as a Daml contract is enforced by the ledger itself.</p>
+    </section>
 
-      <section>
-        <h2>Maps to Sumplus products</h2>
-        <p class="maps"><span class="k">Mandate</span> is the Maria policy layer expressed in Daml. <span class="k">ServiceOffer</span> is the Arsenal paid-skill model. The hash-chained <span class="k">receipt</span> is the same verifiable-audit pattern Sumplus already runs on its EVM trading agent, here native to Daml.</p>
-      </section>
-    </div>
+    <section>
+      <h2>How it works · one atomic choice</h2>
+      <p class="muted"><b>PayAndCall</b> on a vendor's ServiceOffer does four things in a single Daml transaction. All four commit together or none do.</p>
+      <ol class="steps">
+        <li>Check the agent's mandate (cap, daily total, allow-list)</li>
+        <li>Settle payment to the vendor, change back to the agent</li>
+        <li>Deliver the service entitlement</li>
+        <li>Write a hash-chained, tamper-evident receipt</li>
+      </ol>
+      <p class="muted" style="margin-top:5px">There is never payment without delivery, and never a spend that breaks policy.</p>
+    </section>
 
-    <!-- RIGHT -->
-    <div>
-      <section>
-        <h2>How it works · one atomic choice</h2>
-        <p class="muted" style="margin-bottom:7px"><b style="color:#1c2740">PayAndCall</b> on a vendor's ServiceOffer does four things in a single Daml transaction. All four commit together or none do.</p>
-        <ol class="steps">
-          <li>Check the agent's mandate (cap, daily total, allow-list)</li>
-          <li>Settle payment to the vendor, change back to the agent</li>
-          <li>Deliver the service entitlement</li>
-          <li>Write a hash-chained, tamper-evident receipt</li>
-        </ol>
-        <p class="muted" style="margin-top:6px">There is never payment without delivery, and never a spend that breaks policy.</p>
-      </section>
+    <section>
+      <h2>What runs today · all on a real ledger</h2>
+      <ul class="runs">
+        <li><b>Acceptance suite</b> (<span style="font-family:var(--mono);font-size:10.5px">daml test</span>): two settled purchases with a chained receipt trail; three out-of-policy attempts rejected on-ledger.</li>
+        <li><b>Autonomous agent</b> over an HTTP 402 gateway: discovers services, gets 402, pays, receives the on-ledger receipt. No Canton SDK needed.</li>
+        <li><b>MCP server</b> exposes the same tools to any LLM client.</li>
+        <li><b>Live web dashboard</b> drives the gateway: watch the handshake, the settlement, and the receipt chain grow.</li>
+      </ul>
+    </section>
 
-      <section>
-        <h2>What runs today · all on a real ledger</h2>
-        <ul class="runs">
-          <li><b>Acceptance suite</b> (<span style="font-family:var(--mono);font-size:10.5px">daml test</span>): two settled purchases with a chained receipt trail; three out-of-policy attempts rejected on-ledger.</li>
-          <li><b>Autonomous agent</b> over an HTTP 402 gateway: discovers services, gets 402, pays, receives the on-ledger receipt. No Canton SDK needed.</li>
-          <li><b>MCP server</b> exposes the same tools to any LLM client.</li>
-          <li><b>Live web dashboard</b> drives the gateway: watch the handshake, the settlement, and the receipt chain grow.</li>
-        </ul>
-      </section>
+    <section>
+      <h2>Privacy comes from Canton's own model</h2>
+      <p class="muted">The same query, asked as different parties:</p>
+      <div class="privacy">
+        <div class="ptile some"><div class="who">Auditor</div><div class="sees">2</div></div>
+        <div class="ptile some"><div class="who">Each vendor</div><div class="sees">1</div></div>
+        <div class="ptile zero"><div class="who">Rival</div><div class="sees">0</div></div>
+      </div>
+    </section>
 
-      <section>
-        <h2>Privacy comes from Canton's own model</h2>
-        <p class="muted">The same query, asked as different parties:</p>
-        <div class="privacy">
-          <div class="ptile some"><div class="who">Auditor</div><div class="sees">2</div></div>
-          <div class="ptile some"><div class="who">Each vendor</div><div class="sees">1</div></div>
-          <div class="ptile zero"><div class="who">Rival</div><div class="sees">0</div></div>
-        </div>
-      </section>
-    </div>
+    <section>
+      <h2>Maps to Sumplus products</h2>
+      <p class="maps"><span class="k">Mandate</span> is the Maria policy layer expressed in Daml. <span class="k">ServiceOffer</span> is the Arsenal paid-skill model. The hash-chained <span class="k">receipt</span> is the same verifiable-audit pattern Sumplus already runs on its EVM trading agent, here native to Daml.</p>
+    </section>
+
   </div>
 
 </div>
